@@ -3,17 +3,29 @@ package com.example;
 import com.example.api.ElpriserAPI;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 
 public class Main {
     public static void main(String[] args) {
-        inputHelp(args[0]);
 
-        ElpriserAPI elpriserAPI = new ElpriserAPI(true);
+        try{
+            if (!args[0].equals("--zone")){
+                System.out.println("\"zone\", \"required\"");
+                userInputHelp(args);
+            }
+        }catch (ArrayIndexOutOfBoundsException e){
+            System.out.println("Please input something!");
 
+        }
+
+
+        ElpriserAPI elpriserAPI = new ElpriserAPI();
+        System.out.println(elpriserAPI.getPriser("2024-12-15", ElpriserAPI.Prisklass.SE1).get(2));
+//
     }
 
-    public static void inputHelp(String help){
-        if (help.equals("--help")){
+    public static void userInputHelp(String[] help){
+        if (help[0].equals("--help") || help.length == 0) {
             System.out.println(
                     "--zone\n"+
                     "SE1\n"+
