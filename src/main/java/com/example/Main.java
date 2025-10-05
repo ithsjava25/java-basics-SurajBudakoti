@@ -2,6 +2,7 @@ package com.example;
 
 import com.example.api.ElpriserAPI;
 
+import java.sql.SQLOutput;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.*;
@@ -14,7 +15,6 @@ public class Main {
     public static void main(String[] args) {
 
         checkIfUserInputHelp(args);
-
         checkIfArgumentsPresent(args);
         checkMissingZoneArgument(args);
         checkZoneValidity(args);
@@ -25,23 +25,11 @@ public class Main {
         date = LocalDate.of(2025,9,4);
         List<ElpriserAPI.Elpris> todayElPriser = new ArrayList<>(elpriserAPI.getPriser(date, prisklass));
 
+        displayMinMeanMaxPrices(todayElPriser);
         //If CLI contains sorted, sorts price.
         if (Arrays.asList(args).contains("--sorted")){
             sortsPrice(todayElPriser);
         }
-
-//        TODO: Denna ska komma in om timme för LocalTime.now() >= 13
-//            Hämta dagens timma m.h.a: LocalTime.now().getHour())
-//        List<ElpriserAPI.Elpris> tomorrowElPriser = new ArrayList<>(elpriserAPI.getPriser(date.plusDays(1), prisklass));
-
-        //Alist for every hour in a day in format HH (prepends 0 if hour < 10).
-        List<String> hours = new ArrayList<>();
-        for (int i = 0; i < 24; i++) {
-            hours.add(String.format("%02d", i));
-        }
-
-
-
 }
 
     public static void sortsPrice(List<ElpriserAPI.Elpris> todayElPriser){
@@ -55,8 +43,8 @@ public class Main {
             for (int i = 0; i < 24;i++){
                 double sumOfHourForEveryQuarter = 0;
                 for (int j = 0; j < 4; j++) {
-                    int index = (i == 0) ? 0 : i * 4 - 1;
-                    sumOfHourForEveryQuarter += todayElPriser.get(index).sekPerKWh();
+
+                    sumOfHourForEveryQuarter += todayElPriser.get(i*4+j).sekPerKWh();
                 }
                 hourlyPrices.add(sumOfHourForEveryQuarter);
             }
@@ -82,8 +70,28 @@ public class Main {
 
 //    TODO: Write method for calculating Min, Max and Mean price from Hashmap newElPriser
 //        Sort them and choose lowest/max number orePerKWh?
-    public static void displayMinMeanMaxPrices_withValidData(List<ElpriserAPI.Elpris> todayElPriser){
+    public static void displayMinMeanMaxPrices(List<ElpriserAPI.Elpris> todayElPriser){
+        todayElPriser.sort(Comparator.comparingDouble(pris-> pris.sekPerKWh()));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH");
 
+        ElpriserAPI.Elpris firstElementInSortedList = todayElPriser.getFirst();
+        ElpriserAPI.Elpris lastElementInSortedList = todayElPriser.getLast();
+
+        String lowestPrice = formatToComma(firstElementInSortedList.sekPerKWh()) + " öre";
+        String hourWithLowestPrice = firstElementInSortedList.timeStart().format(formatter) + "-" + firstElementInSortedList.timeEnd().format(formatter);
+
+        String highestPrice = formatToComma(lastElementInSortedList.sekPerKWh()) + " öre";
+        String hourWithHighestPrice = lastElementInSortedList.timeStart().format(formatter) + "-" + lastElementInSortedList.timeEnd().format(formatter);
+
+        double  meanPriceDouble = 0;
+        for (ElpriserAPI.Elpris everyElement: todayElPriser){
+            meanPriceDouble += everyElement.sekPerKWh();
+        }
+        String meanPriceToString = formatToComma(meanPriceDouble/todayElPriser.size());
+
+        System.out.println("Lägsta pris mellan: " + hourWithLowestPrice + " " + lowestPrice);
+        System.out.println("Högsta pris mellan: " + hourWithHighestPrice + " " + highestPrice);
+        System.out.println("Medelpris: " + meanPriceToString);
     }
 
     public static void checkIfUserInputHelp(String[] args){
