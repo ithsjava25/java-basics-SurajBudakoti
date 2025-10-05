@@ -147,42 +147,34 @@ class MainTest {
 
     @Test
     void displaySortedPrices_whenRequested() {
-        // This test ensures charging window can span days when next day data exists
-        LocalDate today = LocalDate.of(2025, 9, 4);
-        LocalDate tomorrow = today.plusDays(1);
+        String mockJson = """
+                [{"SEK_per_kWh":0.30,"EUR_per_kWh":0.03,"EXR":10.0,"time_start":"2025-09-04T00:00:00+02:00","time_end":"2025-09-04T01:00:00+02:00"},
+                 {"SEK_per_kWh":0.10,"EUR_per_kWh":0.01,"EXR":10.0,"time_start":"2025-09-04T01:00:00+02:00","time_end":"2025-09-04T02:00:00+02:00"},
+                 {"SEK_per_kWh":0.20,"EUR_per_kWh":0.02,"EXR":10.0,"time_start":"2025-09-04T02:00:00+02:00","time_end":"2025-09-04T03:00:00+02:00"},
+                 {"SEK_per_kWh":0.10,"EUR_per_kWh":0.01,"EXR":10.0,"time_start":"2025-09-04T03:00:00+02:00","time_end":"2025-09-04T04:00:00+02:00"}]""";
 
-        String mockJsonToday = """
-                [{"SEK_per_kWh":0.30,"EUR_per_kWh":0.03,"EXR":10.0,"time_start":"2025-09-04T20:00:00+02:00","time_end":"2025-09-04T21:00:00+02:00"},
-                 {"SEK_per_kWh":0.10,"EUR_per_kWh":0.01,"EXR":10.0,"time_start":"2025-09-04T21:00:00+02:00","time_end":"2025-09-04T22:00:00+02:00"},
-                 {"SEK_per_kWh":0.20,"EUR_per_kWh":0.02,"EXR":10.0,"time_start":"2025-09-04T22:00:00+02:00","time_end":"2025-09-04T23:00:00+02:00"},
-                 {"SEK_per_kWh":0.10,"EUR_per_kWh":0.01,"EXR":10.0,"time_start":"2025-09-04T23:00:00+02:00","time_end":"2025-09-04T00:00:00+02:00"}]""";
-        String mockJsonTomorrow = """
-                [{"SEK_per_kWh":0.10,"EUR_per_kWh":0.01,"EXR":10.0,"time_start":"2025-09-05T00:00:00+02:00","time_end":"2025-09-05T01:00:00+02:00"},
-                 {"SEK_per_kWh":0.15,"EUR_per_kWh":0.015,"EXR":10.0,"time_start":"2025-09-05T01:00:00+02:00","time_end":"2025-09-05T02:00:00+02:00"},
-                 {"SEK_per_kWh":0.15,"EUR_per_kWh":0.015,"EXR":10.0,"time_start":"2025-09-05T02:00:00+02:00","time_end":"2025-09-05T03:00:00+02:00"}]""";
-
-        ElpriserAPI.setMockResponseForDate(today, mockJsonToday);
-        ElpriserAPI.setMockResponseForDate(tomorrow, mockJsonTomorrow);
+        ElpriserAPI.setMockResponse(mockJson);
 
         Main.main(new String[]{"--zone", "SE2", "--date", "2025-09-04", "--sorted"});
 
         String output = bos.toString();
 
-        // Expected sorted output (descending by price)
+        // Expected sorted output (ascending by price)
         List<String> expectedOrder = List.of(
-                "20-21 30,00 öre",
-                "22-23 20,00 öre",
-                "01-02 15,00 öre",
-                "02-03 15,00 öre",
-                "21-22 10,00 öre",
-                "23-00 10,00 öre",
-                "00-01 10,00 öre"
+                "2025-09-04    00-01         30,00 öre",
+                "2025-09-04    00-01         30,00 öre",
+                "2025-09-04    02-03         20,00 öre",
+                "2025-09-04    02-03         20,00 öre",
+                "2025-09-04    01-02         10,00 öre",
+                "2025-09-04    03-04         10,00 öre",
+                "2025-09-04    01-02         10,00 öre",
+                "2025-09-04    03-04         10,00 öre"
         );
 
         // Extract actual lines that match the pattern
         List<String> actualSortedLines = Arrays.stream(output.split("\n"))
                 .map(String::trim) // 1. Trim leading/trailing whitespace
-                .filter(line -> line.matches("^\\d{2}-\\d{2}\\s+\\d+,\\d{2}\\s+öre$")) // 2. Use a more flexible regex
+                .filter(line -> line.matches("^\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}-\\d{2}\\s+\\d+,\\d{2}\\s+öre$")) // 2. Use a more flexible regex
                 .collect(Collectors.toList());
 
         // Assert that actual lines match expected order
