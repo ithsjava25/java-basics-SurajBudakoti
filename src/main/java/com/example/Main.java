@@ -155,7 +155,7 @@ public class Main {
                 String formattedDate = startTime + "-" + endTime;
                 String formattedPrice = formatToComma(todayElpris.sekPerKWh());
 
-                String formattedElpris = yearFormatDate + "    " + formattedDate + "         " + formattedPrice + " öre";
+                String formattedElpris = formattedDate + " " + formattedPrice + " öre";
                 System.out.println(formattedElpris);
                 System.out.println(todayElpris);
             }
